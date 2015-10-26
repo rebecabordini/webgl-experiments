@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+  <title>Sierpinski Triangles - Rebeca Bordini</title>
+  <script id="vertex-shader" type="x-shader/x-vertex">
+  attribute vec4 vPosition;
+  void main() {
+    gl_Position = vPosition;
+  }
+  </script>
+
+  <script id="fragment-shader" type="x-shader/x-fragment">
+  precision mediump float;
+  uniform vec4 u_color;
+  void main() {
+     gl_FragColor = u_color;
+  }
+  </script>
+
+  <script type="text/javascript" src="./common/webgl-utils.js"></script>
+  <script type="text/javascript" src="./common/initShaders.js"></script>
+  <script type="text/javascript" src="./common/MV.js"></script>
+  <script type="text/javascript" src="sierpinski.js"></script>
+</head>
+
+<body class="assignment">
+  <section class="settings">
+    <form id="settings" class="settings-form">
+      <div class="form-group">
+        <label for="numDivisions">Divisions</label>
+        <input type=range id=numDivisions min=0 value=4 max=7 step=1 oninput="outputNumDivisionsValue(value)">
+        <output for=numDivisions id=numDivisionsValue>4</output>
+      </div>
+    </form>
+  </section>
+
+  <section class="drawing">
+    <canvas id="gl-canvas" width="600" height="600">
+      Oops ... your browser doesn't support the HTML5 canvas element
+    </canvas>
+  </section>
+
+  <script>
+  var outputThetaValue = function(value) {
+    document.querySelector('#thetaValue').value = value;
+  };
+  var outputNumDivisionsValue = function(value) {
+    document.querySelector('#numDivisionsValue').value = value;
+  };
+  </script>
+</body>
+</html>
