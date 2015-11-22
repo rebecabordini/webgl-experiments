@@ -1,0 +1,218 @@
+
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<html>
+<head>
+<title>WebGL: Projeção Perspectiva e Projeção Paralela</title>
+
+<script type="x-shader/x-vertex" id="vshader">
+     attribute vec3 coords;
+     uniform mat4 modelview;
+     uniform mat4 projection;
+     uniform bool lit;
+     uniform vec3 normal;
+     uniform mat3 normalMatrix;
+     uniform vec4 color;
+     varying vec4 vColor;
+     void main() {
+        vec4 coords = vec4(coords,1.0);
+        vec4 transformedVertex = modelview * coords;
+        gl_Position = projection * transformedVertex;
+        if (lit) {
+           vec3 unitNormal = normalize(normalMatrix*normal);
+           float multiplier = abs(unitNormal.z);
+           vColor = vec4( multiplier*color.r, multiplier*color.g, multiplier*color.b, color.a );
+        }
+        else {
+            vColor = color;
+        }
+     }
+</script>
+<script type="x-shader/x-fragment" id="fshader">
+     precision mediump float;
+     varying vec4 vColor;
+     void main() {
+         gl_FragColor = vColor;
+     }
+</script>
+
+
+<script type="text/javascript" src="gl-matrix-min.js"></script>
+<script type="text/javascript">
+
+"use strict";
+
+var gl;   // The webgl context.
+
+var aCoords;           // Location of the coords attribute variable in the shader program.
+var aCoordsBuffer;     // Buffer to hold coords.
+var uColor;            // Location of the color uniform variable in the shader program.
+var uProjection;       // Location of the projection uniform matrix in the shader program.
+var uModelview;        // Location of the modelview unifirm matrix in the shader program.
+var uNormal;           // Location of the normal uniform in the shader program.
+var uLit;              // Location of the lit uniform in the shader program.
+var uNormalMatrix;     // Location of the normalMatrix uniform matrix in the shader program.
+
+var projection = mat4.create();   // projection matrix
+var modelview = mat4.create();    // modelview matrix
+var normalMatrix = mat3.create(); // matrix, derived from modelview matrix, for transforming normal vectors
+
+var rotateX = 0.4;   // rotation of cube about the x-axis
+var rotateY = -0.5;  // rotation of cube about the y-axis
+
+function drawPrimitive( primitiveType, color, vertices ) {
+     gl.enableVertexAttribArray(aCoords);
+     gl.bindBuffer(gl.ARRAY_BUFFER,aCoordsBuffer);
+     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STREAM_DRAW);
+     gl.uniform4fv(uColor, color);
+     gl.vertexAttribPointer(aCoords, 3, gl.FLOAT, false, 0, 0);
+     gl.drawArrays(primitiveType, 0, vertices.length/3);
+}
+
+function draw() {
+    gl.clearColor(0,0,0,1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    if (document.getElementById("persproj").checked) {
+         mat4.perspective(projection, Math.PI/4, 1, 4, 8);
+    }
+    else {
+         mat4.ortho(projection,-2.5, 2.5, -2.5, 2.5, 4, 8);
+    }
+    gl.uniformMatrix4fv(uProjection, false, projection );
+
+    mat4.lookAt(modelview, [0,0,6], [0,0,0], [0,1,0]);
+    mat4.rotateX(modelview, modelview, rotateX);
+    mat4.rotateY(modelview, modelview, rotateY);
+    gl.uniformMatrix4fv(uModelview, false, modelview );
+
+    mat3.normalFromMat4(normalMatrix, modelview);
+    gl.uniformMatrix3fv(uNormalMatrix, false, normalMatrix);
+
+    gl.uniform3f( uNormal, 0, 0, 1 );
+    drawPrimitive( gl.TRIANGLE_FAN, [1,0,0,1], [ -1,-1,1, 1,-1,1, 1,1,1, -1,1,1 ]);
+    gl.uniform3f( uNormal, 0, 0, -1 );
+    drawPrimitive( gl.TRIANGLE_FAN, [0,1,0,1], [ -1,-1,-1, -1,1,-1, 1,1,-1, 1,-1,-1 ]);
+    gl.uniform3f( uNormal, 0, 1, 0 );
+    drawPrimitive( gl.TRIANGLE_FAN, [0,0,1,1], [ -1,1,-1, -1,1,1, 1,1,1, 1,1,-1 ]);
+    gl.uniform3f( uNormal, 0, -1, 0 );
+    drawPrimitive( gl.TRIANGLE_FAN, [1,1,0,1], [ -1,-1,-1, 1,-1,-1, 1,-1,1, -1,-1,1 ]);
+    gl.uniform3f( uNormal, 1, 0, 0 );
+    drawPrimitive( gl.TRIANGLE_FAN, [1,0,1,1], [ 1,-1,-1, 1,1,-1, 1,1,1, 1,-1,1 ]);
+    gl.uniform3f( uNormal, -1, 0, 0 );
+    drawPrimitive( gl.TRIANGLE_FAN, [0,1,1,1], [ -1,-1,-1, -1,-1,1, -1,1,1, -1,1,-1 ]);
+
+    gl.uniform1i( uLit, 0 );  // The lines representing the coordinate axes are not lit.
+
+    gl.lineWidth(4);
+    drawPrimitive( gl.LINES, [1,0,0,1], [ -2,0,0, 2,0,0] );
+    drawPrimitive( gl.LINES, [0,1,0,1], [ 0,-2,0, 0,2,0] );
+    drawPrimitive( gl.LINES, [0,0,1,1], [ 0,0,-2, 0,0,2] );
+    gl.lineWidth(1);
+}
+
+function createProgram(gl, vertexShaderSource, fragmentShaderSource) {
+   var vsh = gl.createShader( gl.VERTEX_SHADER );
+   gl.shaderSource(vsh,vertexShaderSource);
+   gl.compileShader(vsh);
+   if ( ! gl.getShaderParameter(vsh, gl.COMPILE_STATUS) ) {
+      throw "Error in vertex shader:  " + gl.getShaderInfoLog(vsh);
+   }
+   var fsh = gl.createShader( gl.FRAGMENT_SHADER );
+   gl.shaderSource(fsh, fragmentShaderSource);
+   gl.compileShader(fsh);
+   if ( ! gl.getShaderParameter(fsh, gl.COMPILE_STATUS) ) {
+      throw "Error in fragment shader:  " + gl.getShaderInfoLog(fsh);
+   }
+   var prog = gl.createProgram();
+   gl.attachShader(prog,vsh);
+   gl.attachShader(prog, fsh);
+   gl.linkProgram(prog);
+   if ( ! gl.getProgramParameter( prog, gl.LINK_STATUS) ) {
+      throw "Link error in program:  " + gl.getProgramInfoLog(prog);
+   }
+   return prog;
+}
+
+function doKey(evt) {
+    var rotationChanged = true;
+	switch (evt.keyCode) {
+	    case 37: rotateY -= 0.05; break;        // left arrow
+	    case 39: rotateY +=  0.05; break;       // right arrow
+	    case 38: rotateX -= 0.05; break;        // up arrow
+	    case 40: rotateX += 0.05; break;        // down arrow
+	    case 13: rotateX = rotateY = 0; break;  // return
+	    case 36: rotateX = rotateY = 0; break;  // home
+	    default: rotationChanged = false;
+	}
+	if (rotationChanged) {
+     	evt.preventDefault();
+      draw();
+	}
+}
+
+function getTextContent( elementID ) {
+    var element = document.getElementById(elementID);
+    var fsource = "";
+    var node = element.firstChild;
+    var str = "";
+    while (node) {
+        if (node.nodeType == 3)
+            str += node.textContent;
+        node = node.nextSibling;
+    }
+    return str;
+}
+
+function init() {
+   try {
+        var canvas = document.getElementById("glcanvas");
+        gl = canvas.getContext("webgl");
+        if (!gl) {
+            throw "Could not create WebGL context.";
+        }
+        var vertexShaderSource = getTextContent("vshader");
+        var fragmentShaderSource = getTextContent("fshader");
+        var prog = createProgram(gl,vertexShaderSource,fragmentShaderSource);
+        gl.useProgram(prog);
+        aCoords =  gl.getAttribLocation(prog, "coords");
+        uModelview = gl.getUniformLocation(prog, "modelview");
+        uProjection = gl.getUniformLocation(prog, "projection");
+        uColor =  gl.getUniformLocation(prog, "color");
+        uLit =  gl.getUniformLocation(prog, "lit");
+        uNormal =  gl.getUniformLocation(prog, "normal");
+        uNormalMatrix =  gl.getUniformLocation(prog, "normalMatrix");
+        aCoordsBuffer = gl.createBuffer();
+        gl.enable(gl.DEPTH_TEST);
+        gl.enable(gl.CULL_FACE);
+        document.getElementById("persproj").checked = true;
+        document.addEventListener("keydown", doKey, false);   }
+   catch (e) {
+      document.getElementById("message").innerHTML =
+           "Could not initialize WebGL: " + e;
+      return;
+   }
+   draw();
+}
+
+</script>
+</head>
+<body onload="init()" style="background-color:#DDD">
+
+<h2>Projeção Perspectiva e Projeção Paralela</h2>
+
+<p id=message>Use as setas do teclado para rotacionar o cubo. Para resetar as rotações para zero aperte Home ou Enter.</p>
+
+<p>
+  <input type="radio" name="projectionType" id="persproj" value="perspective" onchange="draw()">
+      <label for="persproj">Projeção Perspectiva</label>
+  <input type="radio" name="projectionType" id="orthproj" value="orthogonal" onchange="draw()" style="margin-left:1cm">
+      <label for="orthproj">Projeção Paralela</label>
+</p>
+
+<div>
+   <canvas width=600 height=600 id="glcanvas" style="background-color:red"></canvas>
+</div>
+
+</body>
+</html>
