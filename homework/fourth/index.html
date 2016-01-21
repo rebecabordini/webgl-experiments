@@ -31,6 +31,10 @@
       </script>
       <script>
             var camera, controls, scene, renderer, cross;
+            var audio = document.createElement('audio');
+            var source = document.createElement('source');
+            source.src = '/sounds/science_fiction_danger_alarm.mp3';
+            audio.appendChild(source);
 
             init();
             animate();
@@ -49,6 +53,16 @@
               lightsOn();
 
               window.addEventListener( 'resize', onWindowResize, false );
+              window.onkeyup = function(e) {
+                e.preventDefault();
+                var key = e.keyCode ? e.keyCode : e.which;
+                if (key == 80) {
+                  if (audio.paused)
+                    audio.play();
+                  else
+                    audio.pause();
+                };
+              };
               render();
             }
 
