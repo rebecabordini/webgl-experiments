@@ -321,8 +321,9 @@
 
             function animate() {
               requestAnimationFrame( animate );
-              planet.position.x += 0.01;
+              planet.rotation.y += 0.005;
               controls.update();
+              render();
             };
 
             function render() {
