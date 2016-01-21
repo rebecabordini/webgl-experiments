@@ -25,6 +25,8 @@
               createEarth();
               addStarWarsShip();
               createVenus();
+              createMercury();
+              createSaturn();
               drawPlanet();
               lightsOn();
 
@@ -89,8 +91,32 @@
             		bumpScale: 0.005,
             	})
             	var mesh	= new THREE.Mesh(geometry, material)
+              mesh.position.x = -30;
+              mesh.position.y = 50;
+              mesh.position.z = 30;
+              mesh.scale.x = 30;
+              mesh.scale.y = 30;
+              mesh.scale.z = 30;
             	scene.add(mesh);
             };
+
+            function createSaturn(){
+            	var geometry	= new THREE.SphereGeometry(0.5, 32, 32)
+            	var texture	= THREE.ImageUtils.loadTexture('img/saturnmap.jpg');
+            	var material	= new THREE.MeshPhongMaterial({
+            		map	: texture,
+            		bumpMap	: texture,
+            		bumpScale: 0.05,
+            	})
+            	var mesh	= new THREE.Mesh(geometry, material);
+              mesh.position.x = 50;
+              mesh.position.y = 0;
+              mesh.position.z = 0;
+              mesh.scale.x = 10;
+              mesh.scale.y = 10;
+              mesh.scale.z = 10;
+            	scene.add(mesh);
+            }
 
             function createVenus (){
             	var geometry	= new THREE.SphereGeometry(0.5, 32, 32)
@@ -219,19 +245,26 @@
             };
 
             function lightsOn() {
-              var spotLight = new THREE.SpotLight(0xffffff);
-              spotLight.position.set(-40, 60, -10);
-              spotLight.intensity = 2;
-              scene.add( spotLight );
+              var light	= new THREE.AmbientLight( 0x888888 )
+            	scene.add( light )
+            	var light	= new THREE.DirectionalLight( 0xcccccc, 1 )
+            	light.position.set(5,5,5)
+            	scene.add( light )
+            	light.castShadow	= true
+            	light.shadowCameraNear	= 0.01
+            	light.shadowCameraFar	= 15
+            	light.shadowCameraFov	= 45
 
-              var spotLight2 = new THREE.SpotLight( 0x5192e9 );
-              spotLight2.position.set(40, -60, 30);
-              spotLight2.intensity = 1.5;
-              scene.add(spotLight2);
+            	light.shadowCameraLeft	= -1
+            	light.shadowCameraRight	=  1
+            	light.shadowCameraTop	=  1
+            	light.shadowCameraBottom= -1
 
-              var ambientLight = new THREE.AmbientLight( 0x5192e9 );
-              ambientLight.intensity = 3.5;
-              scene.add(ambientLight);
+            	light.shadowBias	= 0.001
+            	light.shadowDarkness	= 0.2
+
+            	light.shadowMapWidth	= 1024*2
+            	light.shadowMapHeight	= 1024*2
             };
 
             function loadSkyBox() {
